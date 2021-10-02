@@ -1,0 +1,5 @@
+POSTGRES_DB=service_db
+POSTGRES_USER=db_user
+POSTGRES_PASSWORD=trust_me
+DB_HOST=db
+DB_PORT=5432
