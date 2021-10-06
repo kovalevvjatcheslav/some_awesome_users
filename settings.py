@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     DB_HOST: str
     DB_PORT: int
     POSTGRES_PASSWORD: str
+    SEED_USER_NAME: str
+    SEED_USER_PASSWORD: str
+    SECRET: str
+    HASH_ITERATIONS_NUMBER: int
 
     @property
     def PG_DSN(self):
