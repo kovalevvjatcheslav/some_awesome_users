@@ -1,11 +1,8 @@
 from hashlib import sha3_256
 from sqlalchemy import Column, BigInteger, String
-from sqlalchemy.orm import declarative_base
 
+from app.database import Base
 from settings import settings
-
-
-Base = declarative_base()
 
 
 class User(Base):

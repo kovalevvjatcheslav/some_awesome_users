@@ -10,7 +10,7 @@ import os
 from alembic import op
 from sqlalchemy import orm
 
-from database.models import User
+from app.dao.users import User
 from settings import settings
 
 # revision identifiers, used by Alembic.

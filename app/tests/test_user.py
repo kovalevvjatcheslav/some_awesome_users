@@ -10,7 +10,7 @@ from app.main import app
 @pytest.mark.asyncio
 async def test_login(client):
     response = await client.post(
-        "/login", json={"username": "test_user", "password": "test_password"}
+        "/login", json={"name": "test_user", "password": "test_password"}
     )
     print(response.status_code)
     print(response.json())
