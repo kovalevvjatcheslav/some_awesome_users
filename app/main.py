@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.database import pg_session
+from database import pg_session
 from app.routers.users import router as users_router
 
 app = FastAPI(

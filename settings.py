@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     SEED_USER_PASSWORD: str
     SECRET: str
     HASH_ITERATIONS_NUMBER: int
+    TOKEN_LIFETIME: int
 
     @property
     def PG_DSN(self):

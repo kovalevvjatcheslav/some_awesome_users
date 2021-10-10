@@ -1,7 +1,8 @@
 from httpx import AsyncClient
 import pytest
 
-from app.database import pg_session, Base
+from database import pg_session, get_session
+from models import Base
 from app.main import app
 
 
@@ -21,3 +22,13 @@ async def init_db():
     async with pg_session.engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
     await pg_session.dispose_engine()
+
+
+db_session = pytest.fixture(get_session)
+# @pytest.fixture()
+# async def db_session():
+#     session = pg_session.async_session_factory()
+#     try:
+#         yield session
+#     finally:
+#         await session.close()
