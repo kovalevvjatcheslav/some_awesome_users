@@ -1,18 +1,44 @@
+import random
+from string import ascii_letters, digits
+from typing import List
+
 from httpx import AsyncClient
+from fastapi.encoders import jsonable_encoder
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.utils import encode_password
+from app.dto.users import UserRequestCreate
+from app.utils import encode_password, create_user
 from models import User, UserType
 
 
 @pytest.fixture
 async def user(db_session: AsyncSession) -> User:
-    hashed_pass = encode_password("test_password")
-    user = User(name="test_user", password=hashed_pass, user_type=UserType.all)
-    db_session.add(user)
+    return await create_user(
+        db_session,
+        UserRequestCreate(
+            name="test_user", password="test_password", user_type=UserType.all
+        ),
+    )
+
+
+@pytest.fixture
+async def users(db_session: AsyncSession) -> List[User]:
+    users_data = []
+    for i in range(2):
+        users_data.append(
+            dict(
+                name=f"test_user{i}",
+                password=encode_password(f"test_password{i}"),
+                user_type=random.choice([item.value for item in UserType]),
+            )
+        )
+    db_users = [User(**data) for data in users_data]
+    db_session.add_all(db_users)
     await db_session.commit()
-    return user
+    for db_user in db_users:
+        await db_session.refresh(db_user)
+    return db_users
 
 
 class TestUser:
@@ -33,11 +59,24 @@ class TestUser:
         assert response.json() == {"detail": "User not found"}
 
     @pytest.mark.asyncio
-    async def test_get_users(self, client: AsyncClient, user: User):
+    async def test_get_users(self, client: AsyncClient, user: User, users: List[User]):
         await client.post(
             "/login", json={"name": user.name, "password": "test_password"}
         )
         response = await client.get("/users")
+        expected = [
+            jsonable_encoder(
+                dict(
+                    id=db_user.id,
+                    name=db_user.name,
+                    user_type=db_user.user_type,
+                    created_at=db_user.created_at,
+                )
+            )
+            for db_user in users
+        ]
+        assert response.status_code == 200
+        assert expected == response.json()["users"]
 
     @pytest.mark.asyncio
     async def test_get_users_invalid_token(self, client: AsyncClient, user: User):
@@ -50,3 +89,29 @@ class TestUser:
         response = await client.get("/users")
         assert response.status_code == 403
         assert response.json() == {"detail": "Token is invalid"}
+
+    @pytest.mark.asyncio
+    async def test_create_user(self, client: AsyncClient, user: User):
+        await client.post(
+            "/login", json={"name": user.name, "password": "test_password"}
+        )
+        name = "".join(random.choices(ascii_letters, k=20))
+        password = "".join(random.choices(ascii_letters + digits, k=10))
+        response = await client.post(
+            "/user", json={"name": name, "password": password, "user_type": "ro"}
+        )
+        assert response.status_code == 200
+
+    @pytest.mark.asyncio
+    async def test_create_user_fail_exits(self, client: AsyncClient, user: User):
+        await client.post(
+            "/login", json={"name": user.name, "password": "test_password"}
+        )
+        password = "".join(random.choices(ascii_letters + digits, k=10))
+        response = await client.post(
+            "/user", json={"name": user.name, "password": password, "user_type": "ro"}
+        )
+        assert response.status_code == 409
+        assert response.json() == {
+            "detail": "The user with the current name already exists"
+        }

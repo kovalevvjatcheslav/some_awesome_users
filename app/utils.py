@@ -7,10 +7,12 @@ from typing import Optional, Tuple
 
 from fastapi.security import APIKeyCookie
 from sqlalchemy.future import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.status import HTTP_403_FORBIDDEN
 
+from app.dto.users import UserRequestCreate
 from database import session_context
 from models import User
 from settings import settings
@@ -63,9 +65,6 @@ class UserAuth(APIKeyCookie):
     async def __call__(self, request: Request) -> Optional[User]:
         token = await super().__call__(request)
         payload, valid = self.__validate_token__(token)
-        print("!" * 100)
-        print(valid)
-        print("!" * 100)
         if not valid:
             raise HTTPException(
                 status_code=HTTP_403_FORBIDDEN, detail="Token is invalid"
@@ -92,3 +91,12 @@ class UserAuth(APIKeyCookie):
 
 
 get_user_by_token = UserAuth(name="token")
+
+
+async def create_user(db_session: AsyncSession, user: UserRequestCreate) -> User:
+    hashed_pass = encode_password(user.password)
+    db_user = User(name=user.name, password=hashed_pass, user_type=user.user_type)
+    db_session.add(db_user)
+    await db_session.commit()
+    await db_session.refresh(db_user)
+    return db_user

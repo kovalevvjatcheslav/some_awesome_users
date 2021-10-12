@@ -5,6 +5,8 @@ from sqlalchemy.orm import sessionmaker
 
 from settings import settings
 
+ALREADY_EXISTS_CODE = "23505"
+
 
 class PostgresqlSession:
     def __init__(self):

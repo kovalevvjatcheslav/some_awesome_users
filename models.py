@@ -21,3 +21,6 @@ class User(Base):
     user_type = Column(EnumType(UserType), nullable=False)
     created_at = Column(DateTime, server_default=now(), nullable=False)
     deleted_at = Column(DateTime, nullable=True)
+
+    def to_dict(self) -> dict:
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
