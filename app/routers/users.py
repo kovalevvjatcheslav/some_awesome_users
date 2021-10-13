@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
@@ -80,3 +81,20 @@ async def create_user(
     await db_session.refresh(db_user)
     result = UserResponse(**db_user.to_dict())
     return JSONResponse(content={"user": jsonable_encoder(result)})
+
+
+@router.delete("/user/{user_id}")
+async def create_user(
+    user_id: int,
+    db_session: AsyncSession = Depends(get_session),
+    admin_user: User = Depends(get_user_by_token),
+):
+    if admin_user.user_type != UserType.all:
+        raise HTTPException(status_code=HTTP_403_FORBIDDEN, detail="Forbidden")
+    if user_id == admin_user.id:
+        raise HTTPException(
+            status_code=HTTP_409_CONFLICT, detail="The user cannot delete himself"
+        )
+    deleted_user = await db_session.get(User, user_id)
+    deleted_user.deleted_at = datetime.now()
+    await db_session.commit()

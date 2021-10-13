@@ -41,6 +41,12 @@ async def users(db_session: AsyncSession) -> List[User]:
     return db_users
 
 
+@pytest.fixture
+async def authorized_user(client: AsyncClient, user: User) -> User:
+    await client.post("/login", json={"name": user.name, "password": "test_password"})
+    return user
+
+
 class TestUser:
     @pytest.mark.asyncio
     async def test_login(self, client: AsyncClient, user: User):
@@ -59,10 +65,9 @@ class TestUser:
         assert response.json() == {"detail": "User not found"}
 
     @pytest.mark.asyncio
-    async def test_get_users(self, client: AsyncClient, user: User, users: List[User]):
-        await client.post(
-            "/login", json={"name": user.name, "password": "test_password"}
-        )
+    async def test_get_users(
+        self, client: AsyncClient, authorized_user: User, users: List[User]
+    ):
         response = await client.get("/users")
         expected = [
             jsonable_encoder(
@@ -79,10 +84,9 @@ class TestUser:
         assert expected == response.json()["users"]
 
     @pytest.mark.asyncio
-    async def test_get_users_invalid_token(self, client: AsyncClient, user: User):
-        await client.post(
-            "/login", json={"name": user.name, "password": "test_password"}
-        )
+    async def test_get_users_invalid_token(
+        self, client: AsyncClient, authorized_user: User
+    ):
         token = client.cookies.get("token")
         client.cookies.delete("token")
         client.cookies.set("token", token[:-1])
@@ -91,10 +95,7 @@ class TestUser:
         assert response.json() == {"detail": "Token is invalid"}
 
     @pytest.mark.asyncio
-    async def test_create_user(self, client: AsyncClient, user: User):
-        await client.post(
-            "/login", json={"name": user.name, "password": "test_password"}
-        )
+    async def test_create_user(self, client: AsyncClient, authorized_user: User):
         name = "".join(random.choices(ascii_letters, k=20))
         password = "".join(random.choices(ascii_letters + digits, k=10))
         response = await client.post(
@@ -103,15 +104,43 @@ class TestUser:
         assert response.status_code == 200
 
     @pytest.mark.asyncio
-    async def test_create_user_fail_exits(self, client: AsyncClient, user: User):
-        await client.post(
-            "/login", json={"name": user.name, "password": "test_password"}
-        )
+    async def test_create_user_fail_exits(
+        self, client: AsyncClient, authorized_user: User
+    ):
         password = "".join(random.choices(ascii_letters + digits, k=10))
         response = await client.post(
-            "/user", json={"name": user.name, "password": password, "user_type": "ro"}
+            "/user",
+            json={
+                "name": authorized_user.name,
+                "password": password,
+                "user_type": "ro",
+            },
         )
         assert response.status_code == 409
         assert response.json() == {
             "detail": "The user with the current name already exists"
         }
+
+    @pytest.mark.asyncio
+    async def test_delete_user(
+        self, db_session: AsyncSession, client: AsyncClient, authorized_user: User
+    ):
+        name = "".join(random.choices(ascii_letters, k=20))
+        password = "".join(random.choices(ascii_letters + digits, k=10))
+        created_user = await create_user(
+            db_session,
+            UserRequestCreate(name=name, password=password, user_type=UserType.ro),
+        )
+        response = await client.delete(f"/user/{created_user.id}")
+        await db_session.refresh(created_user)
+        assert response.status_code == 200
+        assert created_user.deleted_at is not None
+
+    @pytest.mark.asyncio
+    async def test_delete_himself_fail(
+        self, db_session: AsyncSession, client: AsyncClient, authorized_user: User
+    ):
+        response = await client.delete(f"/user/{authorized_user.id}")
+        await db_session.refresh(authorized_user)
+        assert response.status_code == 409
+        assert authorized_user.deleted_at is None
