@@ -84,7 +84,7 @@ async def create_user(
 
 
 @router.delete("/user/{user_id}")
-async def create_user(
+async def delete_user(
     user_id: int,
     db_session: AsyncSession = Depends(get_session),
     admin_user: User = Depends(get_user_by_token),

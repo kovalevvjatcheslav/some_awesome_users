@@ -10,6 +10,7 @@ import os
 from alembic import op
 from sqlalchemy import orm
 
+from app.utils import encode_password
 from models import User, UserType
 from settings import settings
 
@@ -23,7 +24,7 @@ depends_on = "ac516ae1e2c3"
 def upgrade():
     bind = op.get_bind()
     session = orm.Session(bind=bind)
-    hashed_password = User.encode_password(settings.SEED_USER_PASSWORD)
+    hashed_password = encode_password(settings.SEED_USER_PASSWORD)
     seed_user = User(
         name=settings.SEED_USER_NAME, password=hashed_password, user_type=UserType.all
     )

@@ -50,6 +50,14 @@ def create_token(user_id: int, user_type: str) -> str:
     return ".".join((header_b64.decode(), payload_b64.decode(), signature))
 
 
+class InvalidTokenException(HTTPException):
+    pass
+
+
+class TokenExpiredException(HTTPException):
+    pass
+
+
 class UserAuth(APIKeyCookie):
     @classmethod
     def __validate_token__(cls, token: str) -> Tuple[dict, bool]:
@@ -66,11 +74,11 @@ class UserAuth(APIKeyCookie):
         token = await super().__call__(request)
         payload, valid = self.__validate_token__(token)
         if not valid:
-            raise HTTPException(
+            raise InvalidTokenException(
                 status_code=HTTP_403_FORBIDDEN, detail="Token is invalid"
             )
         if payload["exp"] <= int(time()):
-            raise HTTPException(
+            raise TokenExpiredException(
                 status_code=HTTP_403_FORBIDDEN, detail="Token is expired"
             )
         async with session_context() as db_session:

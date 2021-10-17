@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Some awesome users</title>
+    <script src="/static/main.js"></script>
+    <link rel="stylesheet" href="/static/main.css">
+</head>
+<body>
+    <form onsubmit="login(this, event)" id="login-form">
+        <div>
+            <label for="username-input">Name:</label><br>
+            <input type="text" placeholder="name" id="username-input" required>
+        </div>
+        <div>
+            <label for="password-input">Password:</label><br>
+            <input type="text" placeholder="password" id="password-input" required>
+        </div>
+        <button type="submit">Login</button>
+    </form>
+
+    <div id="modal-wrapper" class="modal">
+        <div class="modal-content">
+            <form onsubmit="create_user(this, event)" id="create-user-form">
+                <div>
+                    <label for="create-username-input">Name:</label><br>
+                    <input type="text" placeholder="name" id="create-username-input" required>
+                </div>
+                <div>
+                    <label for="create-password-input">Password:</label><br>
+                    <input type="text" placeholder="password" id="create-password-input" required>
+                </div>
+                <div>
+                    <label for="user-type">Choose user type:</label><br>
+                    <select id="user-type">
+                        <option value="ro">Read only</option>
+                        <option value="all">All</option>
+                    </select>
+                </div>
+                <button type="submit">Create user</button>
+            </form>
+            <button onclick="hide_add_form()">Cancel</button>
+        </div>
+    </div>
+</body>
+</html>
