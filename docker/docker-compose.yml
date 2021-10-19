@@ -5,3 +5,5 @@ services:
     restart: on-failure
     ports:
       - "5432:5432"
+    volumes:
+      - ../data:/var/lib/postgresql/

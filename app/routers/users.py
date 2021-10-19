@@ -42,6 +42,13 @@ async def login(
     return response
 
 
+@router.post("/logout")
+async def logout():
+    response = JSONResponse(content={"detail": "Ok"})
+    response.delete_cookie("token")
+    return response
+
+
 @router.get("/users")
 async def get_users(
     db_session: AsyncSession = Depends(get_session),
@@ -56,7 +63,8 @@ async def get_users(
             {"user_id": admin_user.id},
         )
     ).all()
-    return JSONResponse(content={"users": [jsonable_encoder(user) for user in users]})
+    result = [UserResponse(**dict(user)) for user in users]
+    return JSONResponse(content={"users": jsonable_encoder(result)})
 
 
 @router.post("/user")

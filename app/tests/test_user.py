@@ -69,19 +69,23 @@ class TestUser:
         self, client: AsyncClient, authorized_user: User, users: List[User]
     ):
         response = await client.get("/users")
-        expected = [
-            jsonable_encoder(
-                dict(
-                    id=db_user.id,
-                    name=db_user.name,
-                    user_type=db_user.user_type,
-                    created_at=db_user.created_at,
+        expected = sorted(
+            [
+                jsonable_encoder(
+                    dict(
+                        id=db_user.id,
+                        name=db_user.name,
+                        user_type=db_user.user_type,
+                        created_at=db_user.created_at,
+                        deleted_at=None,
+                    )
                 )
-            )
-            for db_user in users
-        ]
+                for db_user in users
+            ],
+            key=lambda item: item["id"],
+        )
         assert response.status_code == 200
-        assert expected == response.json()["users"]
+        assert expected == sorted(response.json()["users"], key=lambda item: item["id"])
 
     @pytest.mark.asyncio
     async def test_get_users_invalid_token(
