@@ -51,12 +51,13 @@ function create_user_row(users_block, user, permission) {
             users_block.appendChild(item);
         }
     );
-    if (permission === "all") {
-        const delete_button = document.createElement("button");
-        delete_button.innerHTML = "delete";
-        delete_button.id = `button-${user.id}`
-        delete_button.addEventListener("click", remove_user);
-        users_block.appendChild(delete_button);
+    const delete_button = document.createElement("button");
+    delete_button.innerHTML = "delete";
+    delete_button.id = `button-${user.id}`
+    delete_button.addEventListener("click", remove_user);
+    users_block.appendChild(delete_button);
+    if (permission !== "all") {
+        delete_button.disabled = true;
     }
 }
 
@@ -97,7 +98,7 @@ async function build_users() {
     const permission = get_user_permission();
     users.forEach(
         function(user) {
-            create_user_row(users_block, user);
+            create_user_row(users_block, user, permission);
         }
     );
 
@@ -154,7 +155,8 @@ async function create_user(form, event) {
     if (resp.ok) {
         const users_block = document.getElementById("users");
         const user = (await resp.json()).user;
-        create_user_row(users_block, user);
+        const permission = get_user_permission();
+        create_user_row(users_block, user, permission);
     }
 }
 

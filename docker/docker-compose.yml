@@ -1,9 +1,21 @@
+version: "3.9"
 services:
   db:
     image: postgres:14.0
     env_file: ../config/dev_env
     restart: on-failure
-    ports:
-      - "5432:5432"
     volumes:
-      - ../data:/var/lib/postgresql/
+      - ../data:/var/lib/postgresql/data/
+  app:
+    environment:
+      - ENVIRONMENT
+    build:
+      context: ..
+      dockerfile: docker/app
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    depends_on:
+      - db
+    restart: on-failure
+    command: bash -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT}"
+
